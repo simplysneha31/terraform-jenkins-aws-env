@@ -8,21 +8,27 @@ pipeline {
 
   environment {
     TF_WORKING_DIR = "envs/${params.ENV}"
+    PATH = "$HOME/bin:$PATH" // This makes Terraform and AWS CLI available everywhere
   }
 
   stages {
     stage('Install Tools') {
       steps {
         sh '''
-          echo "Install AWS CLI"
+          echo "Install AWS CLI, or update if already installed"
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          ./aws/install
+          unzip -q -o awscliv2.zip
+          ./aws/install --install-dir ~/my-aws-cli --bin-dir ~/bin --update
 
-          echo "Install Terraform"
-          curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
-          apt-get update && apt-get install -y terraform
+          echo "Install Terraform locally"
+          curl -fsSL https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_linux_amd64.zip -o terraform.zip
+          unzip -o terraform.zip
+          mkdir -p $HOME/bin
+          mv terraform $HOME/bin/
+
+          echo "PATH after install:"
+          echo $PATH
+          terraform version
         '''
       }
     }
@@ -30,8 +36,8 @@ pipeline {
     stage('Terraform Operations') {
       steps {
         withCredentials([
-          string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-          string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+          string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'AWS_SECRET_KEY_ID', variable: 'AWS_SECRET_KEY_ID')
         ]) {
           script {
             dir("${TF_WORKING_DIR}") {
