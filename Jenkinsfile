@@ -26,41 +26,23 @@ pipeline {
         '''
       }
     }
-    stage('Terraform Init') {
-      steps {
-      withCredentials([
-        string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-        string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_KEY_ID'),
-      ])
-        dir("${TF_WORKING_DIR}") {
-          sh 'terraform init -backend-config=backend.tf'
-        }
-      }
-    }
 
-    stage('Terraform Validate') {
+    stage('Terraform Operations') {
       steps {
-        dir("${TF_WORKING_DIR}") {
-          sh 'terraform validate'
-        }
-      }
-    }
-
-    stage('Terraform Plan') {
-      steps {
-        dir("${TF_WORKING_DIR}") {
-          sh 'terraform plan -out=tfplan'
-        }
-      }
-    }
-
-    stage('Terraform Apply') {
-      when {
-        expression { return params.AUTO_APPLY }
-      }
-      steps {
-        dir("${TF_WORKING_DIR}") {
-          sh 'terraform apply -auto-approve tfplan'
+        withCredentials([
+          string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+        ]) {
+          script {
+            dir("${TF_WORKING_DIR}") {
+              sh 'terraform init -backend-config=backend.tf'
+              sh 'terraform validate'
+              sh 'terraform plan -out=tfplan'
+              if (params.AUTO_APPLY) {
+                sh 'terraform apply -auto-approve tfplan'
+              }
+            }
+          }
         }
       }
     }
