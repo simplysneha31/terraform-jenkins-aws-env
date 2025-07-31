@@ -37,11 +37,11 @@ pipeline {
       steps {
         withCredentials([
           string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-          string(credentialsId: 'AWS_SECRET_KEY_ID', variable: 'AWS_SECRET_KEY_ID')
+          string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
         ]) {
           script {
             dir("${TF_WORKING_DIR}") {
-              sh 'terraform init -backend-config=backend.tf'
+              sh 'terraform init'
               sh 'terraform validate'
               sh 'terraform plan -out=tfplan'
               if (params.AUTO_APPLY) {

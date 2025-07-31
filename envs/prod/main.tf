@@ -5,7 +5,7 @@ provider "aws" {
 
 module "s3_bucket" {
   source      = "../../modules/s3_bucket"
-  bucket_name = "my-prod-bucket-sneha"
+  bucket = "my-prod-bucket-sneha"
   tags        = {
     Environment = "prod"
   }
